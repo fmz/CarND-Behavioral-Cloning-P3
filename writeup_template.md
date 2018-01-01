@@ -17,16 +17,6 @@ The goals / steps of this project are the following:
 * Summarize the results with a written report.
 
 
-[//]: # (Image References)
-
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
-
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.  
 
@@ -90,7 +80,7 @@ In order to gauge how well the model was working, I split my image and steering 
 
 To combat the overfitting, I modified the model so that it uses less epochs, but I also added dropout layers in order to combat the rising loss values in the validation set.
 
-Then I added 1x1 convolutional layers, before and after the original convolutional layers in the model. The first layer's job is to reduce the 3 color channels (RGB) into a single, smooth channel. The latter's job is to slightly increase the dimensionality of the hidden features before the fully connected layers.
+Then I added 1x1 convolutional layers, before and after the original convolutional layers in the model. The first layer's job is to reduce the 3 color channels (RGB) into a single, smooth channel. The latter's job is to slightly normalize the hidden features before the fully connected layers.
 
 The final step was to run the simulator to see how well the car was driving around track one. It took a little while to convince the car to stay on track, but adding extra data, tuning my parameters, and doing a bit of data augmentation did the trick.
 
@@ -100,7 +90,46 @@ At the end of the process, the vehicle is able to drive autonomously around the 
 
 The final model architecture (model.py: train_nvidia()) consisted of a convolution neural network with the following layers and layer sizes:
 
-<b>FIXME</b>
+
+Layer (type)                 Output Shape              Param #
+=================================================================
+cropping2d_1 (Cropping2D)    (None, 90, 320, 3)        0
+_________________________________________________________________
+lambda_1 (Lambda)            (None, 90, 320, 3)        0
+_________________________________________________________________
+conv2d_1 (Conv2D)            (None, 90, 320, 1)        4
+_________________________________________________________________
+conv2d_2 (Conv2D)            (None, 43, 158, 24)       624
+_________________________________________________________________
+conv2d_3 (Conv2D)            (None, 20, 77, 36)        21636
+_________________________________________________________________
+conv2d_4 (Conv2D)            (None, 8, 37, 48)         43248
+_________________________________________________________________
+conv2d_5 (Conv2D)            (None, 6, 35, 64)         27712
+_________________________________________________________________
+conv2d_6 (Conv2D)            (None, 4, 33, 64)         36928
+_________________________________________________________________
+conv2d_7 (Conv2D)            (None, 4, 33, 64)         4160
+_________________________________________________________________
+flatten_1 (Flatten)          (None, 8448)              0
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 8448)              0
+_________________________________________________________________
+dense_1 (Dense)              (None, 1164)              9834636
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 1164)              0
+_________________________________________________________________
+dense_2 (Dense)              (None, 100)               116500
+_________________________________________________________________
+dense_3 (Dense)              (None, 50)                5050
+_________________________________________________________________
+dense_4 (Dense)              (None, 10)                510
+_________________________________________________________________
+dense_5 (Dense)              (None, 1)                 11
+=================================================================
+Total params: 10,091,019
+Trainable params: 10,091,019
+Non-trainable params: 0
 
 
 
@@ -118,3 +147,12 @@ After the collection process, I had 10020 data points (before mirroring, and con
 I finally randomly shuffled the data set and put 10% of the data into a validation set. Generally, 20-30% is the better ratio, but my real validation set was driving on the actual track. In reality I don't have a test set, since my track options are limited.
 
 I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was 4 as evidenced by basic trial and error, where the validation set accuracy remains constant, or increases after that. I used an adam optimizer so that manually training the learning rate wasn't necessary.
+
+### Lessons and Shortcomings
+
+It's interesting to see a car be able to drive itself solely based on a neural network trained with good enough data. This required no feature-engineering at all; I didn't need to detect the lanes, the curvature of the road, nor give the car any explicit constraints on its behavior.
+
+However, I don't think that this approach scales. A neural netowrk model wouldn't be able to outperform me at this task (unless, perhaps, I spend years upon years feeding it training data). Furthermore, given any novel situation, the car wouldn't know what to do, as evidenced by the cases where it goes completely off track, and has no idea how to get back. Blindly cloning behavior doesn't produce a smart driving, and I certainly would not want to be in a car that only uses that.
+
+It seems to me like there needs to be some hard constraints over what the model should and shouldn't learn. For instance, regardless of how terrible my data is, I would like the car to learn that going off the road is a big no-no, that turns should be done in a smooth manner, and that if it's faced with a situation where it's not sure what to do, it should stop rather than go with its best guess, etc.
+Perhaps combining reinforcement learning with deep learning would be the way to go.
